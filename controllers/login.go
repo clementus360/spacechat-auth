@@ -19,7 +19,7 @@ func HandleError(err error,message string, res http.ResponseWriter) {
 }
 
 // Encrypts user data
-func EncryptUserData(user models.User, hashSecret string) (models.User, error) {
+func EncryptUserData(user *models.User, hashSecret string) (models.User, error) {
 
 	var encryptedUser models.User
 
@@ -70,7 +70,7 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 		result := UserDB.Where("phone_hash = ?", services.Hash(user.Phone)).First(&user)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				TotpCode,PhoneNumber,err = CreateUser(user,UserDB,res)
+				TotpCode,PhoneNumber,err = CreateUser(&user,UserDB,res)
 				if err!=nil {
 					HandleError(err, "Failed to create user", res)
 					return
@@ -78,7 +78,10 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 			}
 		} else {
 			var encryption models.EncryptionKey
-			if err := UserDB.Where("user_id = ?", user.ID).First(&encryption); err!=nil {
+			if result := UserDB.Where("user_id = ?", user.ID).First(&encryption); result.Error!=nil {
+				HandleError(result.Error,"Failed to get encryption key from DB", res)
+				return
+			} else {
 				OtpSecret,err := services.Decrypt(user.TotpSecret, encryption.Key)
 				if err!=nil {
 					HandleError(err, "Failed to decrypt totp code", res)
@@ -109,7 +112,7 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 	}
 }
 
-func CreateUser(user models.User, UserDB *gorm.DB, res http.ResponseWriter) (string, string, error){
+func CreateUser(user *models.User, UserDB *gorm.DB, res http.ResponseWriter) (string, string, error){
 	// Generate a random secret for TOTP and encryption
 	secret,err := services.GenerateSecret()
 	if err!=nil {
@@ -137,6 +140,9 @@ func CreateUser(user models.User, UserDB *gorm.DB, res http.ResponseWriter) (str
 		HandleError(err, "Failed to generate otp code", res)
 	}
 
+	// Add OtpSecret to user model
+	user.TotpSecret = OtpSecret
+
 	// Encrypt the user data using the hash secret
 	EncryptedUser,err := EncryptUserData(user,hashSecret)
 	if err!=nil {
@@ -145,10 +151,10 @@ func CreateUser(user models.User, UserDB *gorm.DB, res http.ResponseWriter) (str
 	}
 
 	EncryptedUser.PhoneHash = services.Hash(user.Phone)
-		if err:= UserDB.Create(&EncryptedUser).Error; err!=nil {
-			HandleError(err, "Failed to add user to DB", res)
-			return "","",err
-		}
+	if err:= UserDB.Create(&EncryptedUser).Error; err!=nil {
+		HandleError(err, "Failed to add user to DB", res)
+		return "","",err
+	}
 
 	// Save the hash secret to the database
 	EncryptionKey := models.EncryptionKey{

@@ -3,8 +3,11 @@ module github.com/clementus360/spacechat-auth
 go 1.20
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/joho/godotenv v1.5.1
+	github.com/pquerna/otp v1.4.0
+	github.com/robfig/cron v1.2.0
 	github.com/twilio/twilio-go v1.3.4
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.6
@@ -19,7 +22,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pquerna/otp v1.4.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 )

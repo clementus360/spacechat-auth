@@ -27,7 +27,7 @@ func (os OTPService) GenerateTotp(secret string, number string) (string, error) 
 	totpConfig := totp.GenerateOpts{
 		Issuer: os.Issuer,
 		AccountName: number,
-		Period: 30,
+		Period: 60,
 		Digits: 6,
 		Algorithm: otp.AlgorithmSHA256,
 	}
@@ -47,10 +47,15 @@ func (os OTPService) GenerateTotp(secret string, number string) (string, error) 
 }
 
 func GenerateTotpCode(secret string) (string, error){
-	totpCode, err := totp.GenerateCode(secret, time.Now())
+	totpCode, err := totp.GenerateCode(secret, time.Now().UTC())
 	if err!=nil {
 		return "",err
 	}
 
 	return totpCode,nil
+}
+
+func VerifyTotpCode(totpCode string, totpSecret string) bool {
+	isValid := totp.Validate(totpCode, totpSecret)
+	return isValid
 }

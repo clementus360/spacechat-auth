@@ -30,6 +30,16 @@ func ConnectDatabase() *gorm.DB {
 		panic(err)
 	}
 
+	sqlDb,err := db.DB()
+	if err!=nil {
+		log.Println("failed to get db instance", err)
+	}
+	defer func() {
+		if err:=sqlDb.Close(); err!=nil {
+			log.Println("failed to close DB", err)
+		}
+	}()
+
 	return db
 
 }
@@ -41,4 +51,8 @@ func AutoMigrate(db *gorm.DB, model interface{}) {
 		fmt.Printf("Failed to migrate the model")
 		log.Fatal(err)
 	}
+}
+
+func DeleteInactiveUsers(UserDB *gorm.DB) {
+
 }
