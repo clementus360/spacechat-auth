@@ -118,6 +118,7 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		// Send Otp code to cliend via sms
 		if err:= services.NewTwilioService().SendMessage(user.Phone, user.TotpCode); err!=nil {
 			HandleError(err, "Failed to send message", res)
 			return
