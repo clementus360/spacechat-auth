@@ -23,7 +23,7 @@ func NewOtpService() *OTPService{
 	}
 }
 
-func (os OTPService) GenerateTotp(secret string, number string) (string, string, error) {
+func (os OTPService) GenerateTotp(secret string, number string) (string, error) {
 	totpConfig := totp.GenerateOpts{
 		Issuer: os.Issuer,
 		AccountName: number,
@@ -35,17 +35,22 @@ func (os OTPService) GenerateTotp(secret string, number string) (string, string,
 	totpKey,err := totp.Generate(totpConfig)
 	if err!=nil {
 		fmt.Println("Failed to generate otp key")
-		return "","",err
+		return "",err
 	}
-
-	totpCode,err := totp.GenerateCode(totpKey.Secret(), time.Now())
 
 	if err!=nil {
 		fmt.Println("Failed to generate otp code")
-		return "","",err
+		return "",err
 	}
 
-	fmt.Println(totpKey)
+	return totpKey.Secret(), nil
+}
 
-	return totpCode, totpKey.Secret(), nil
+func GenerateTotpCode(secret string) (string, error){
+	totpCode, err := totp.GenerateCode(secret, time.Now())
+	if err!=nil {
+		return "",err
+	}
+
+	return totpCode,nil
 }

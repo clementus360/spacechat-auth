@@ -8,7 +8,6 @@ type User struct {
 	Phone        string `json:"phone" gorm:"type:varchar(50);unique"`
 	Email        string `json:"email" gorm:"type:varchar(100)"`
 	Activated    bool
-	TotpCode string
 	TotpSecret		 string
 	PhoneHash	string `json:"-" gorm:"uniqueIndex"`
 }
