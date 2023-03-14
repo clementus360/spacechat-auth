@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
+	"github.com/clementus360/spacechat-auth/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -30,16 +32,6 @@ func ConnectDatabase() *gorm.DB {
 		panic(err)
 	}
 
-	sqlDb,err := db.DB()
-	if err!=nil {
-		log.Println("failed to get db instance", err)
-	}
-	defer func() {
-		if err:=sqlDb.Close(); err!=nil {
-			log.Println("failed to close DB", err)
-		}
-	}()
-
 	return db
 
 }
@@ -54,5 +46,29 @@ func AutoMigrate(db *gorm.DB, model interface{}) {
 }
 
 func DeleteInactiveUsers(UserDB *gorm.DB) {
+	// Calculate the time from which we will select users
+	// cutoff := time.Now().Add(-24 * time.Hour)
+	cutoff := time.Now().Add(-5 * time.Minute)
 
+	fmt.Print("test")
+
+
+	// Get all users that older than 24hours
+	var inactiveUsers []models.User
+	err:=UserDB.Where("Activated = ? AND created_at < ?", false, cutoff).Find(&inactiveUsers).Error
+	if err!=nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(inactiveUsers)
+	fmt.Println(cutoff)
+
+
+	// Delete the inactive users
+	for _,user := range inactiveUsers {
+		err = UserDB.Delete(&user).Error
+		if err!=nil {
+			log.Println("Error deleting user", err)
+		}
+	}
 }

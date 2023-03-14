@@ -8,8 +8,8 @@ import (
 	"github.com/clementus360/spacechat-auth/config"
 	"github.com/clementus360/spacechat-auth/controllers"
 	"github.com/clementus360/spacechat-auth/models"
-	"github.com/clementus360/spacechat-auth/services"
 	"github.com/gorilla/mux"
+	"github.com/robfig/cron"
 )
 
 func main() {
@@ -26,7 +26,11 @@ func main() {
 	router.HandleFunc("/api/login", controllers.LoginHandler(UserDB)).Methods("GET")
 	router.HandleFunc("/api/verify", controllers.VerifyHandler(UserDB)).Methods("POST")
 
-	services.SetupDeleteInactiveUsers(UserDB)
+	// Delete unverified users after 24 hours
+	c := cron.New()
+	c.AddFunc("*/5 * * * *", func() { config.DeleteInactiveUsers(UserDB) })
+	c.Start()
+	defer c.Stop()
 
 	err := http.ListenAndServe(":3000", router)
 	if err!=nil {
