@@ -11,6 +11,10 @@ import (
 	"gorm.io/gorm"
 )
 
+type LoginResponse struct {
+	message string
+}
+
 // Handles Error logs in the console and the response
 func HandleError(err error,message string, res http.ResponseWriter) {
 		fmt.Println(message)
@@ -106,8 +110,12 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		response := LoginResponse{
+			message: "Login successful",
+		}
+
 		res.WriteHeader(http.StatusOK)
-		json.NewEncoder(res).Encode(user)
+		res.Write([]byte(response.message))
 
 	}
 }

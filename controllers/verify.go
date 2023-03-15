@@ -14,7 +14,7 @@ type AuthData struct {
 	OtpCode string `json:"otpCode"`
 }
 
-type ResponseData struct {
+type VerifyResponse struct {
 	Token string `json:"token"`
 }
 
@@ -56,8 +56,14 @@ func VerifyHandler(UserDB *gorm.DB) http.HandlerFunc {
 			HandleError(err, "Failed to generate token", res)
 		}
 
-		ResponseData := ResponseData{
+		ResponseData := VerifyResponse{
 			Token: jwtToken,
+		}
+
+		user.Activated = true
+		result = UserDB.Save(&user)
+		if result.Error != nil {
+			HandleError(err, "Failed to activate user", res)
 		}
 
 		json.NewEncoder(res).Encode(ResponseData)
