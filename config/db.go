@@ -33,7 +33,6 @@ func ConnectDatabase() *gorm.DB {
 	}
 
 	return db
-
 }
 
 func AutoMigrate(db *gorm.DB, model interface{}) {
@@ -45,30 +44,23 @@ func AutoMigrate(db *gorm.DB, model interface{}) {
 	}
 }
 
-func DeleteInactiveUsers(UserDB *gorm.DB) {
-	// Calculate the time from which we will select users
-	// cutoff := time.Now().Add(-24 * time.Hour)
-	cutoff := time.Now().Add(-5 * time.Minute)
+func DeleteInactiveUsers(UserDB *gorm.DB) (int64,error) {
+	cutoff := time.Now().Add(-1 * time.Hour)
 
-	fmt.Print("test")
+	tx := UserDB.Begin()
 
-
-	// Get all users that older than 24hours
-	var inactiveUsers []models.User
-	err:=UserDB.Where("Activated = ? AND created_at < ?", false, cutoff).Find(&inactiveUsers).Error
-	if err!=nil {
-		log.Fatal(err)
+	// Delete the users
+	result := tx.Where("activated = ? AND created_at < ?", false, cutoff).Unscoped().Delete(&models.User{})
+	if result.Error != nil {
+		return 0,result.Error
 	}
 
-	fmt.Println(inactiveUsers)
-	fmt.Println(cutoff)
-
-
-	// Delete the inactive users
-	for _,user := range inactiveUsers {
-		err = UserDB.Delete(&user).Error
-		if err!=nil {
-			log.Println("Error deleting user", err)
-		}
+	err := tx.Commit().Error
+	if err != nil {
+		fmt.Println(err)
+	    tx.Rollback()
+	    return 0, err
 	}
+
+	return result.RowsAffected,nil
 }
