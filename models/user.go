@@ -9,5 +9,5 @@ type User struct {
 	Email        string `json:"email" gorm:"type:varchar(100)"`
 	Activated    bool
 	TotpSecret	string
-	PhoneHash	string `json:"-" gorm:"uniqueIndex"`
+	PhoneHash	string `json:"phone_hash" gorm:"uniqueIndex"`
 }
