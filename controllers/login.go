@@ -91,7 +91,8 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 
 		err = json.NewDecoder(resp.Body).Decode(&user)
 		if err!=nil {
-			HandleError(err, "Failed to decode response body", res)
+			HandleError(err, "Failed to decode db response body", res)
+			return
 		}
 
 
@@ -102,43 +103,38 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 				return
 			}
 		} else {
+			resp,err = http.Get(fmt.Sprintf("%v/encryption/%d", DB_URI, user.ID))
+			if err!=nil {
+				HandleError(err,"Failed to get encryption data from DB service",res)
+				return
+			}
 
-			fmt.Print(user.Name)
-			return
+			var encryption models.EncryptionKey
+
+			err = json.NewDecoder(resp.Body).Decode(&encryption)
+			if err!=nil {
+				HandleError(err, "Failed to decode encryption db response", res)
+				return
+			}
+
+			otpSecret,err := services.Decrypt(user.TotpSecret, encryption.Key)
+			if err!=nil {
+				HandleError(err, "Failed to decrypt totp secret",res)
+				return
+			}
+
+			TotpCode,err = services.GenerateTotpCode(otpSecret)
+			if err!=nil {
+				HandleError(err, "Failed to generate totp code", res)
+				return
+			}
+
+			PhoneNumber,err = services.Decrypt(user.Phone, encryption.Key)
+			if err!=nil {
+				HandleError(err, "Failed to decrypt phone number", res)
+				return
+			}
 		}
-
-		// result := UserDB.Where("phone_hash = ?", services.Hash(user.Phone)).First(&user)
-		// if result.Error != nil {
-		// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		// 		TotpCode,PhoneNumber,err = CreateUser(&user,UserDB,res)
-		// 		if err!=nil {
-		// 			HandleError(err, "Failed to create user", res)
-		// 			return
-		// 		}
-		// 	}
-		// } else {
-		// 	var encryption models.EncryptionKey
-		// 	if result := UserDB.Where("user_id = ?", user.ID).First(&encryption); result.Error!=nil {
-		// 		HandleError(result.Error,"Failed to get encryption key from DB", res)
-		// 		return
-		// 	} else {
-		// 		OtpSecret,err := services.Decrypt(user.TotpSecret, encryption.Key)
-		// 		if err!=nil {
-		// 			HandleError(err, "Failed to decrypt totp code", res)
-		// 			return
-		// 		}
-		// 		phoneNumber,err := services.Decrypt(user.Phone,encryption.Key)
-		// 		if err!=nil {
-		// 			HandleError(err, "Failed to decrypt phone number", res)
-		// 		}
-		// 		TotpCode,err = services.GenerateTotpCode(OtpSecret)
-		// 		if err!=nil {
-		// 			HandleError(err, "Failed to generate otp code", res)
-		// 		}
-
-		// 		PhoneNumber = phoneNumber
-		// 	}
-		// }
 
 		// Send Otp code to cliend via sms
 		if err:= services.NewTwilioService().SendMessage(PhoneNumber, TotpCode); err!=nil {
@@ -192,30 +188,37 @@ func CreateUser(user *models.User, UserDB *gorm.DB, DB_URI string, res http.Resp
 
 	EncryptedUser.PhoneHash = services.Hash(user.Phone)
 
+	// Defining the user data to be sent to the database
 	userData := CreateUserRequestData{
 		User: EncryptedUser,
 		Key: hashSecret,
 	}
 
+	// Transforming the data into json
 	requestBody,err := json.Marshal(userData)
 	if err!=nil {
 		return "","",err
 	}
 
+	// Creating a buffer to hold the user data
 	requestBodyBuffer := bytes.NewBuffer(requestBody)
 
+	// Defining the content type header
 	contentType := "application/json"
 
+	// Defining the request client
 	client := &http.Client{
 		Timeout: 10 *time.Second,
 	}
 
+	// Making a post request to the db service to store the user data
 	resp,err := client.Post(fmt.Sprintf("%v/user", DB_URI), contentType, requestBodyBuffer)
 	if err!=nil {
 		return "","",err
 	}
 	defer resp.Body.Close()
 
+	// Handling the responce from the DB service
 	responseBody,err := ioutil.ReadAll(resp.Body)
 	if err!=nil {
 		HandleError(err, "Failed to decode create user response", res)
@@ -223,7 +226,6 @@ func CreateUser(user *models.User, UserDB *gorm.DB, DB_URI string, res http.Resp
 	}
 
 	fmt.Print("PHone number: ",user.Phone)
-
 	fmt.Println("Response body:", string(responseBody))
 
 	return totpCode,user.Phone,nil
