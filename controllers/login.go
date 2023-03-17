@@ -89,13 +89,6 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		err = json.NewDecoder(resp.Body).Decode(&user)
-		if err!=nil {
-			HandleError(err, "Failed to decode db response body", res)
-			return
-		}
-
-
 		if resp.StatusCode == 500 {
 			TotpCode,PhoneNumber,err = CreateUser(&user,UserDB, DB_URI, res)
 			if err!=nil {
@@ -103,6 +96,12 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 				return
 			}
 		} else {
+			err = json.NewDecoder(resp.Body).Decode(&user)
+			if err!=nil {
+				HandleError(err, "Failed to decode db response body", res)
+				return
+			}
+
 			resp,err = http.Get(fmt.Sprintf("%v/encryption/%d", DB_URI, user.ID))
 			if err!=nil {
 				HandleError(err,"Failed to get encryption data from DB service",res)
