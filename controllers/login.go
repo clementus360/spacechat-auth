@@ -11,7 +11,6 @@ import (
 
 	"github.com/clementus360/spacechat-auth/models"
 	"github.com/clementus360/spacechat-auth/services"
-	"gorm.io/gorm"
 )
 
 type LoginResponse struct {
@@ -67,8 +66,7 @@ func EncryptUserData(user *models.User, hashSecret string) (models.User, error) 
 
 
 // Handles requests to /login route
-func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
-	return func (res http.ResponseWriter, req *http.Request)  {
+func LoginHandler(res http.ResponseWriter, req *http.Request) {
 		var user models.User
 		var (
 			TotpCode string
@@ -90,7 +88,7 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 		}
 
 		if resp.StatusCode == 500 {
-			TotpCode,PhoneNumber,err = CreateUser(&user,UserDB, DB_URI, res)
+			TotpCode,PhoneNumber,err = CreateUser(&user, DB_URI, res)
 			if err!=nil {
 				HandleError(err, "Failed to create user", res)
 				return
@@ -148,10 +146,9 @@ func LoginHandler(UserDB *gorm.DB) http.HandlerFunc {
 		res.WriteHeader(http.StatusOK)
 		res.Write([]byte(response.message))
 
-	}
 }
 
-func CreateUser(user *models.User, UserDB *gorm.DB, DB_URI string, res http.ResponseWriter) (string, string, error){
+func CreateUser(user *models.User, DB_URI string, res http.ResponseWriter) (string, string, error){
 	// Generate a random secret for TOTP and encryption
 	secret,err := services.GenerateSecret()
 	if err!=nil {
