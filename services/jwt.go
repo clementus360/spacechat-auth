@@ -33,17 +33,17 @@ func ValidateJWTToken(tokenString string, jwtSecret string) (string, error) {
 	}
 
 	if !token.Valid {
-		return "", fmt.Errorf("Invalid token")
+		return "", fmt.Errorf("invalid token")
 	}
 
 	claims, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
-		return "", fmt.Errorf("Failed to extract the claims")
+		return "", fmt.Errorf("failed to extract the claims")
 	}
 
 	userId, ok := (*claims)["sub"].(string)
 	if !ok {
-		return "", fmt.Errorf("Failed to extract userId from claims")
+		return "", fmt.Errorf("failed to extract userId from claims")
 	}
 
 	return userId, nil

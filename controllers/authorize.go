@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -32,7 +33,6 @@ func AuthorizeClient(res http.ResponseWriter, req *http.Request) {
 		HandleError(err, "Failed to validate token", res)
 		return
 	}
-	fmt.Println(userId)
 
 	sessionId, err := services.GenerateSessionToken()
 	if err != nil {
@@ -40,10 +40,45 @@ func AuthorizeClient(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	services.StoreSession(userId, sessionId)
+	fmt.Println(sessionId)
+
+	err = services.StoreSession(userId, sessionId)
+	if err != nil {
+		HandleError(err, "failed to store session", res)
+		return
+	}
 
 	res.WriteHeader(200)
 	res.Write([]byte(sessionId))
+}
+
+func AuthorizeServer(res http.ResponseWriter, req *http.Request) {
+	vars := mux.Vars(req)
+	encodedTicket := vars["ticket"]
+	ticket, err := url.QueryUnescape(encodedTicket)
+	if err != nil {
+		HandleError(err, "Failed to decode ticket", res)
+		return
+	}
+	userId := vars["userId"]
+
+	fmt.Println(userId)
+	sessionId, err := services.GetSession(userId)
+	if err != nil {
+		HandleError(err, "Failed to get session token", res)
+		return
+	}
+
+	fmt.Println("local token:", sessionId)
+	fmt.Println("Remote ticket", ticket)
+
+	if sessionId != ticket {
+		HandleError(fmt.Errorf("ticket does not match"), "Ticket does not match", res)
+		return
+	}
+
+	fmt.Println("Tokens match")
+
 }
 
 func GetUserData(DB_URI string, userId string) (models.EncryptionKey, error) {

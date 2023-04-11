@@ -9,8 +9,7 @@ import (
 	twilioApi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
-
-type MessageService interface{
+type MessageService interface {
 	SendMessage(number string, message string) error
 }
 
@@ -32,9 +31,9 @@ func NewTwilioService() *TwilioService {
 	})
 
 	return &TwilioService{
-		SID: sid,
-		Token: token,
-		Number: number,
+		SID:       sid,
+		Token:     token,
+		Number:    number,
 		TwilioCli: TwilioCli,
 	}
 }
@@ -45,14 +44,14 @@ func (ts TwilioService) SendMessage(number string, message string) error {
 	params.SetFrom(ts.Number)
 	params.SetBody(message)
 
-	resp,err := ts.TwilioCli.Api.CreateMessage(params)
+	resp, err := ts.TwilioCli.Api.CreateMessage(params)
 
-	if err!=nil {
+	if err != nil {
 		fmt.Println("Failed to send message")
 		return err
 	}
 
-	respBytes,_ := json.Marshal(*resp)
+	respBytes, _ := json.Marshal(*resp)
 	fmt.Println("Message sent: ", string(respBytes))
 
 	return nil
