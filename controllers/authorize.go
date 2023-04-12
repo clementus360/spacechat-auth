@@ -3,8 +3,8 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
@@ -34,6 +34,11 @@ func AuthorizeClient(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if userId != services.Hash(phoneNumber) {
+		HandleError(fmt.Errorf("unauthorized token"), "Failed to match token to user", res)
+		return
+	}
+
 	sessionId, err := services.GenerateSessionToken()
 	if err != nil {
 		HandleError(err, "Failed to generate session token", res)
@@ -54,23 +59,21 @@ func AuthorizeClient(res http.ResponseWriter, req *http.Request) {
 
 func AuthorizeServer(res http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
-	encodedTicket := vars["ticket"]
-	ticket, err := url.QueryUnescape(encodedTicket)
-	if err != nil {
-		HandleError(err, "Failed to decode ticket", res)
-		return
-	}
 	userId := vars["userId"]
 
-	fmt.Println(userId)
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		HandleError(err, "Failed to read request body", res)
+		return
+	}
+
+	ticket := string(body)
+
 	sessionId, err := services.GetSession(userId)
 	if err != nil {
 		HandleError(err, "Failed to get session token", res)
 		return
 	}
-
-	fmt.Println("local token:", sessionId)
-	fmt.Println("Remote ticket", ticket)
 
 	if sessionId != ticket {
 		HandleError(fmt.Errorf("ticket does not match"), "Ticket does not match", res)
@@ -78,6 +81,7 @@ func AuthorizeServer(res http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Println("Tokens match")
+	res.Write([]byte("Tokens match"))
 
 }
 

@@ -34,7 +34,7 @@ func StoreSession(userId string, SessionId string) error {
 func GetSession(userId string) (string, error) {
 	rdb := ConnectRedis()
 
-	Session, err := rdb.Get(context.Background(), userId).Result()
+	Session, err := rdb.Get(context.Background(), Hash(userId)).Result()
 	if err != nil {
 		return "", err
 	}
