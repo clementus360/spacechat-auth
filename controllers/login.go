@@ -85,49 +85,46 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	if resp.StatusCode == 500 {
-		TotpCode, PhoneNumber, err = CreateUser(&user, DB_URI, res)
-		if err != nil {
-			HandleError(err, "Failed to create user", res)
-			return
-		}
-	} else {
-		err = json.NewDecoder(resp.Body).Decode(&user)
-		if err != nil {
-			HandleError(err, "Failed to decode db response body", res)
-			return
-		}
+		HandleError(fmt.Errorf("user does not exist"), "Failed to log in", res)
+		return
+	}
 
-		resp, err = http.Get(fmt.Sprintf("%v/encryption/%d", DB_URI, user.ID))
-		if err != nil {
-			HandleError(err, "Failed to get encryption data from DB service", res)
-			return
-		}
+	err = json.NewDecoder(resp.Body).Decode(&user)
+	if err != nil {
+		HandleError(err, "Failed to decode db response body", res)
+		return
+	}
 
-		var encryption models.EncryptionKey
+	resp, err = http.Get(fmt.Sprintf("%v/encryption/%d", DB_URI, user.ID))
+	if err != nil {
+		HandleError(err, "Failed to get encryption data from DB service", res)
+		return
+	}
 
-		err = json.NewDecoder(resp.Body).Decode(&encryption)
-		if err != nil {
-			HandleError(err, "Failed to decode encryption db response", res)
-			return
-		}
+	var encryption models.EncryptionKey
 
-		otpSecret, err := services.Decrypt(user.TotpSecret, encryption.Key)
-		if err != nil {
-			HandleError(err, "Failed to decrypt totp secret", res)
-			return
-		}
+	err = json.NewDecoder(resp.Body).Decode(&encryption)
+	if err != nil {
+		HandleError(err, "Failed to decode encryption db response", res)
+		return
+	}
 
-		TotpCode, err = services.GenerateTotpCode(otpSecret)
-		if err != nil {
-			HandleError(err, "Failed to generate totp code", res)
-			return
-		}
+	otpSecret, err := services.Decrypt(user.TotpSecret, encryption.Key)
+	if err != nil {
+		HandleError(err, "Failed to decrypt totp secret", res)
+		return
+	}
 
-		PhoneNumber, err = services.Decrypt(user.Phone, encryption.Key)
-		if err != nil {
-			HandleError(err, "Failed to decrypt phone number", res)
-			return
-		}
+	TotpCode, err = services.GenerateTotpCode(otpSecret)
+	if err != nil {
+		HandleError(err, "Failed to generate totp code", res)
+		return
+	}
+
+	PhoneNumber, err = services.Decrypt(user.Phone, encryption.Key)
+	if err != nil {
+		HandleError(err, "Failed to decrypt phone number", res)
+		return
 	}
 
 	// Send Otp code to cliend via sms

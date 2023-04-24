@@ -16,7 +16,8 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/api/login", controllers.LoginHandler).Methods("GET")
+	router.HandleFunc("/api/register", controllers.RegisterHandler).Methods("POST")
+	router.HandleFunc("/api/login", controllers.LoginHandler).Methods("POST")
 	router.HandleFunc("/api/verify", controllers.VerifyHandler).Methods("POST")
 	router.HandleFunc("/api/authorize/{userId}", controllers.AuthorizeClient).Methods("GET")
 	router.HandleFunc("/api/authorize/{userId}", controllers.AuthorizeServer).Methods("POST")
