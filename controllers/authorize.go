@@ -76,7 +76,7 @@ func AuthorizeServer(res http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Println(sessionId, "=?", ticket)
-	
+
 	if sessionId != ticket {
 		HandleError(fmt.Errorf("ticket does not match"), "Ticket does not match", res)
 		return

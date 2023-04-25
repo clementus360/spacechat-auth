@@ -17,7 +17,7 @@ type OTPService struct {
 	Issuer string
 }
 
-func NewOtpService() *OTPService{
+func NewOtpService() *OTPService {
 	return &OTPService{
 		Issuer: os.Getenv("ISSUER"),
 	}
@@ -25,34 +25,34 @@ func NewOtpService() *OTPService{
 
 func (os OTPService) GenerateTotp(secret string, number string) (string, error) {
 	totpConfig := totp.GenerateOpts{
-		Issuer: os.Issuer,
+		Issuer:      os.Issuer,
 		AccountName: number,
-		Period: 60,
-		Digits: 6,
-		Algorithm: otp.AlgorithmSHA256,
+		Period:      120,
+		Digits:      6,
+		Algorithm:   otp.AlgorithmSHA256,
 	}
 
-	totpKey,err := totp.Generate(totpConfig)
-	if err!=nil {
+	totpKey, err := totp.Generate(totpConfig)
+	if err != nil {
 		fmt.Println("Failed to generate otp key")
-		return "",err
+		return "", err
 	}
 
-	if err!=nil {
+	if err != nil {
 		fmt.Println("Failed to generate otp code")
-		return "",err
+		return "", err
 	}
 
 	return totpKey.Secret(), nil
 }
 
-func GenerateTotpCode(secret string) (string, error){
+func GenerateTotpCode(secret string) (string, error) {
 	totpCode, err := totp.GenerateCode(secret, time.Now().UTC())
-	if err!=nil {
-		return "",err
+	if err != nil {
+		return "", err
 	}
 
-	return totpCode,nil
+	return totpCode, nil
 }
 
 func VerifyTotpCode(totpCode string, totpSecret string) bool {

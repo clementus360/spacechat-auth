@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -21,6 +22,18 @@ func RegisterHandler(res http.ResponseWriter, req *http.Request) {
 	err := json.NewDecoder(req.Body).Decode(&user)
 	if err != nil {
 		HandleError(err, "Failed to decode request body", res)
+		return
+	}
+
+	resp, err := http.Get(fmt.Sprintf("%v/user/%v", DB_URI, services.Hash(user.Phone)))
+	if err != nil {
+		HandleError(err, "Failed to make request to DB", res)
+		return
+	}
+
+	fmt.Println(resp.StatusCode)
+	if resp.StatusCode != 500 {
+		HandleError(fmt.Errorf("user already exists"), "Failed to log in", res)
 		return
 	}
 
