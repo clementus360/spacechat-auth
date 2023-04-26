@@ -68,6 +68,7 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) {
 	var (
 		TotpCode    string
 		PhoneNumber string
+		// Email string
 	)
 
 	var DB_URI = os.Getenv("DB_URI")
@@ -126,6 +127,18 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) {
 		HandleError(err, "Failed to decrypt phone number", res)
 		return
 	}
+
+	// Email, err = services.Decrypt(user.Email, encryption.Key)
+	// if err != nil {
+	// 	HandleError(err, "Failed to decrypt email", res)
+	// 	return
+	// }
+
+	// err = services.SendEmail(Email, TotpCode)
+	// if err != nil {
+	// 	HandleError(err, "Failed to send email", res)
+	// 	return
+	// }
 
 	// Send Otp code to cliend via sms
 	if err := services.NewTwilioService().SendMessage(PhoneNumber, TotpCode); err != nil {
