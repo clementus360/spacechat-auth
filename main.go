@@ -21,6 +21,7 @@ func main() {
 	router.HandleFunc("/api/verify", controllers.VerifyHandler).Methods("POST")
 	router.HandleFunc("/api/authorize/{userId}", controllers.AuthorizeClient).Methods("GET")
 	router.HandleFunc("/api/authorize/{userId}", controllers.AuthorizeServer).Methods("POST")
+	router.HandleFunc("/api/user/{id}", controllers.GetUserName).Methods("GET")
 
 	// Create CORS handler with allowed headers and origins
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})

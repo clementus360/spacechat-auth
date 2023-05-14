@@ -141,10 +141,12 @@ func LoginHandler(res http.ResponseWriter, req *http.Request) {
 	// }
 
 	// Send Otp code to cliend via sms
-	if err := services.NewTwilioService().SendMessage(PhoneNumber, TotpCode); err != nil {
-		HandleError(err, "Failed to send message", res)
-		return
-	}
+	// if err := services.NewTwilioService().SendMessage(PhoneNumber, TotpCode); err != nil {
+	// 	HandleError(err, "Failed to send message", res)
+	// 	return
+	// }
+
+	fmt.Println(PhoneNumber, " : ", TotpCode)
 
 	response := LoginResponse{
 		message: "Login successful",
